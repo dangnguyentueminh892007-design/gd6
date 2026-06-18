@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khu Vườn Hái Hoa Học Tiếng Anh - Full Khu Vực Chơi Lớn</title>
+    <style>
+        :root {
+            --garden-sky: #bae6fd;
+            --wood-brown: #78350f;
+            --panel-bg: rgba(255, 255, 255, 0.98);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, var(--garden-sky) 60%, #4ade80 100%);
+            margin: 0; padding: 0; min-height: 100vh;
+            display: flex; overflow: hidden; position: relative;
+            transition: background 0.5s ease;
+        }
+
+        /* KHUNG TRÁI: SIDEBAR LỆNH */
+        .sidebar {
+            width: 330px; background: var(--panel-bg); border-right: 5px solid var(--wood-brown);
+            padding: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 100;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.15); transition: transform 0.4s ease;
+            height: 100vh; position: relative;
+        }
+        .sidebar.collapsed { transform: translateX(-330px); position: absolute; }
+        
+        .toggle-btn {
+            position: absolute; right: -55px; top: 20px; background: var(--wood-brown);
+            color: white; border: none; width: 55px; height: 50px; border-radius: 0 15px 15px 0;
+            cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
+        }
+
+        .stat-box { background: #f0fdf4; padding: 8px; border-radius: 12px; border: 2px solid #86efac; text-align: center; }
+        .stat-title { font-weight: bold; color: #166534; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 2px;}
+        .hearts { font-size: 1.3rem; color: #ef4444; letter-spacing: 2px; }
+        .score-box { font-size: 1.1rem; font-weight: bold; color: #b45309; }
+
+        .level-box { background: #edd8ff; border: 2px solid #c084fc; border-radius: 12px; padding: 8px; text-align: center; }
+        .level-select { width: 100%; padding: 6px; border-radius: 8px; border: 1px solid #a855f7; font-weight: bold; color: #6b21a8; cursor: pointer; }
+
+        /* KHO TỪ VỰNG ACCORDION */
+        .vocab-accordion { border: 2px solid #cbd5e1; border-radius: 12px; background: white; overflow: hidden; }
+        .vocab-header-btn { background: #f1f5f9; border: none; width: 100%; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; cursor: pointer; }
+        .vocab-content { max-height: 180px; overflow-y: auto; padding: 8px; border-top: 1px solid #cbd5e1; display: none; }
+        .vocab-content.show { display: block; }
+        .word-list { overflow-y: auto; max-height: 100px; }
+        .word-item { display: flex; justify-content: space-between; padding: 6px; margin-bottom: 4px; background: #f8fafc; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border-left: 4px solid #cbd5e1; }
+        .word-item.active { background: #dcfce7; border-left-color: #22c55e; font-weight: bold; }
+        
+        .add-word-form { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; background: #f1f5f9; padding: 6px; border-radius: 8px; }
+        .add-word-form input { padding: 4px; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px; }
+
+        /* MENU LỰA CHỌN MÀN CHƠI / TAB CHÍNH */
+        .mode-menu { background: #fffbeb; border: 2px dashed #f59e0b; border-radius: 12px; padding: 8px; }
+        .btn-tab-trigger { width: 100%; padding: 8px; margin-top: 4px; border: none; border-radius: 8px; font-weight: bold; font-size: 0.85rem; text-align: left; cursor: pointer; color: white; display: flex; justify-content: space-between; }
+
+        /* KHUNG PHẢI: KHU VỰC HIỂN THỊ CHÍNH (DYNAMIC TABS) */
+        .main-container { flex-grow: 1; height: 100vh; position: relative; }
+        .app-view { display: none; width: 100%; height: 100%; padding: 20px; flex-direction: column; align-items: center; justify-content: space-between; overflow-y: auto; }
+        .app-view.active-view { display: flex; }
+
+        /* GIAO DIỆN KHU VƯỜN GIỌNG NÓI CHÍNH */
+        .garden-fence { display: flex; align-items: center; gap: 30px; margin-top: 10px; background: rgba(255,255,255,0.3); padding: 10px 40px; border-radius: 30px; }
+        .girl { font-size: 5rem; animation: bounce 2s infinite alternate; }
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-15px); } }
+        .basket { font-size: 4rem; position: relative; }
+        .sun-flower { position: absolute; font-size: 3rem; display: none; }
+
+        .main-task-panel { background: white; width: 100%; max-width: 650px; border: 5px solid var(--wood-brown); border-radius: 24px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .task-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; margin-bottom: 12px; background: #f8fafc; border-radius: 14px; border: 2px solid #e2e8f0; }
+        .task-row.speaking { border-color: #3b82f6; background: #eff6ff; }
+        .task-row.completed { background: #e2e8f0; opacity: 0.6; }
+        .task-content { flex: 1; }
+        .task-tag { font-size: 0.75rem; font-weight: bold; color: #2563eb; }
+        .task-en { font-size: 1.25rem; font-weight: bold; margin: 2px 0; }
+        .task-vi { font-size: 0.9rem; color: #64748b; font-style: italic; margin: 0; }
+        .btn-listen-demo { background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        #micBtn { background: #ef4444; color: white; border: none; width: 100%; padding: 15px; font-size: 1.3rem; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); }
+        #micBtn.listening { background: #b91c1c; }
+
+        /* KHU VỰC THIẾT KẾ MINI GAME KHUNG LỚN */
+        .game-header-bar { width: 100%; max-width: 700px; display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 15px; border: 3px solid var(--wood-brown); margin-bottom: 10px; }
+        .game-playground-card { background: #fffbeb; width: 100%; max-width: 700px; flex-grow: 1; border: 5px solid var(--wood-brown); border-radius: 24px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); position: relative; margin-bottom: 15px; }
+        
+        /* CÁC THÀNH PHẦN TRONG GAME */
+        .game-prompt-title { font-size: 1.6rem; font-weight: bold; color: #1e293b; margin-bottom: 5px; text-align: center; }
+        .game-prompt-sub { font-size: 1.1rem; color: #b45309; margin-bottom: 20px; font-weight: 600; text-align: center; background: #fef3c7; padding: 6px 15px; border-radius: 10px; }
+        
+        .slots-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; min-height: 60px; margin-bottom: 25px; border-bottom: 3px dashed #d97706; width: 100%; padding-bottom: 10px; }
+        .slot-box { width: 48px; height: 52px; background: rgba(255,255,255,0.8); border: 2px solid #ca8a04; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: #1e293b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .letter-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px; }
+        .letter-block { background: #facc15; border: 3px solid #d97706; padding: 10px 18px; border-radius: 12px; font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #b45309; user-select: none; }
+        .letter-block.selected { opacity: 0.2; pointer-events: none; }
+
+        /* LẬT BÀI CHI TIẾT */
+        .card-grid { display: grid; gap: 15px; justify-content: center; margin: 10px auto; width: 100%; max-width: 550px; }
+        .game-card { width: 120px; height: 120px; perspective: 1000px; cursor: pointer; }
+        .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s; text-align: center; }
+        .game-card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card-back { background: #10b981; border: 3px solid #047857; color: white; font-size: 2rem; }
+        .card-front.en { background: #e0f2fe; border: 3px solid #0284c7; color: #1e3a8a; transform: rotateY(180deg); }
+        .card-front.vi { background: #ffedd5; border: 3px solid #ea580c; color: #7c2d12; transform: rotateY(180deg); }
+        .game-card.matched { pointer-events: none; visibility: hidden; }
+
+        /* BẮC CẦU QUA SÔNG */
+        .river-zone { background: #bae6fd; border: 4px dashed #38bdf8; min-height: 110px; width: 100%; border-radius: 20px; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; flex-wrap: wrap; box-shadow: inset 0 4px 10px rgba(0,0,0,0.08); }
+        .word-brick { background: #fdba74; border: 2px solid #ea580c; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.2rem; box-shadow: 0 4px 0 #c2410c; }
+
+        /* THÀNH PHẦN THÔNG BÁO THẮNG THUA TRONG MÀN CHƠI */
+        .game-over-layer { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.95); border-radius:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index: 10; }
+        .btn-restart-miga { background: #d97706; color:white; border:none; padding: 12px 30px; border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor:pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(217,119,6,0.3); }
+
+        .particle { position: absolute; top: -50px; pointer-events: none; animation: fall linear forwards; z-index: 99; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
+        @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR ĐIỀU HƯỚNG TỔNG -->
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" id="toggleBtn">📋</button>
+        <h2 style="color: var(--wood-brown); margin: 0; text-align: center; font-size: 1.3rem;">🏡 KHU VƯỜN LỆNH</h2>
+        
+        <div class="stat-box">
+            <div class="stat-title">Sức Khỏe Của Bé (Vườn Chính)</div>
+            <div class="hearts" id="hpBox">❤️❤️❤️</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-title">Giỏ Hướng Dương Tích Lũy</div>
+            <div class="score-box">🌻 <span id="flowerCount">0</span> Bông</div>
+        </div>
+
+        <div class="level-box">
+            <div class="stat-title" style="color:#6b21a8;">🏆 ĐỘ KHÓ HỆ THỐNG</div>
+            <select class="level-select" id="levelSelect">
+                <option value="easy">🌟 DỄ (Hiện gợi ý nhiều)</option>
+                <option value="medium" selected>🌿 VỪA (Mức chuẩn tự nhiên)</option>
+                <option value="hard">🔥 KHÓ (Giới hạn thời gian)</option>
+            </select>
+        </div>
+
+        <!-- ACCORDION KHO TỪ VỰNG -->
+        <div class="vocab-accordion">
+            <button class="vocab-header-btn" id="accordionToggleBtn">
+                <span>📖 KHO TỪ VỰNG CỦA BÉ</span> <span>▼</span>
+            </button>
+            <div class="vocab-content" id="vocabContentBox">
+                <div class="word-list" id="listContainer"></div>
+                <div class="add-word-form">
+                    <input type="text" id="inWord" placeholder="Từ Anh (Ví dụ: Robot)">
+                    <input type="text" id="inPhrase" placeholder="Cụm từ Anh">
+                    <input type="text" id="inSentence" placeholder="Câu ví dụ Anh">
+                    <input type="text" id="inSentenceVi" placeholder="Nghĩa tiếng Việt câu">
+                    <button style="background:#2563eb; color:white; border:none; padding:5px; border-radius:4px; font-weight:bold; cursor:pointer;" id="btnAddSubmit">Lưu từ mới ➕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BẢNG CHUYỂN ĐỔI CHỌN MÀN CHƠI (TAB CHÍNH CHỨ KHÔNG DÙNG POPUP) -->
+        <div class="mode-menu">
+            <div class="stat-title" style="color: #b45309; margin-bottom: 5px;">🎮 CHỌN MÀN CHƠI CHÍNH</div>
+            <button class="btn-tab-trigger" style="background:#3b82f6;" onclick="switchTab('main-garden-view')"><span>🏡 0. Vườn Phát Âm Gốc</span> <span>➔</span></button>
+            <button class="btn-tab-trigger" style="background:#f59e0b;" onclick="switchTab('game-ongvang-view')"><span>🐝 1. Ong Vàng Xây Tổ</span> <span>➔</span></button>
+            <button class="btn-tab-trigger" style="background:#10b981;" onclick="switchTab('game-latbai-view')"><span>🃏 2. Khu Vườn Bí Mật</span> <span>➔</span></button>
+            <button class="btn-tab-trigger" style="background:#8b5cf6;" onclick="switchTab('game-baccau-view')"><span>🐊 3. Bắc Cầu Qua Sông</span> <span>➔</span></button>
+        </div>
+
+        <button class="btn-restart-miga" style="font-size:0.85rem; padding:8px; margin:0;" id="resetBtn">🔄 Luyện lại từ đầu</button>
+    </div>
+
+    <!-- KHU VỰC THIỂN THỊ CHÍNH (DYNAMIC TABS) -->
+    <div class="main-container">
+
+        <!-- TAB CHÍNH 0: VƯỜN LUYỆN NÓI PHÁT ÂM GỐC -->
+        <div id="main-garden-view" class="app-view active-view">
+            <div class="garden-fence">
+                <div class="girl" id="girl">👧</div>
+                <div class="basket">🧺<div class="sun-flower" id="sunFlower">🌻</div></div>
+            </div>
+            <div class="main-task-panel">
+                <div class="task-row" id="row0">
+                    <div class="task-content">
+                        <div class="task-tag" id="tag0">Chặng 1: Từ Vựng 🎯</div>
+                        <p class="task-en" id="lblWord">...</p>
+                        <p class="task-vi" id="lblIpa">...</p>
+                    </div>
+                    <button class="btn-listen-demo" onclick="playNativeVoice(0)">🔊 Nghe</button>
+                </div>
+                <div class="task-row" id="row1">
+                    <div class="task-content">
+                        <div class="task-tag" id="tag1">Chặng 2: Cụm Từ 🌿</div>
+                        <p class="task-en" id="lblPhrase">...</p>
+                        <p class="task-vi" id="lblPhraseVi">...</p>
+                    </div>
+                    <button class="btn-listen-demo" onclick="playNativeVoice(1)">🔊 Nghe</button>
+                </div>
+                <div class="task-row" id="row2">
+                    <div class="task-content">
+                        <div class="task-tag" id="tag2">Chặng 3: Câu Ví Dụ 🌸</div>
+                        <p class="task-en" id="lblSentence">...</p>
+                        <p class="task-vi" id="lblSentenceVi">...</p>
+                    </div>
+                    <button class="btn-listen-demo" onclick="playNativeVoice(2)">🔊 Nghe</button>
+                </div>
+            </div>
+            <div id="scorePercentBox" style="font-size:1.3rem; font-weight:bold; color:#16a34a; display:none;"></div>
+            <div style="width:100%; max-width:650px; text-align:center;">
+                <div id="gameMsg" style="font-weight:bold; margin-bottom:10px;">Nhấn nút đỏ bên dưới để thu âm chặng màu xanh dương nha!</div>
+                <button id="micBtn">🎙️ BẮT ĐẦU PHÁT ÂM</button>
+            </div>
+        </div>
+
+        <!-- TAB CHÍNH 1: MÀN CHƠI ONG VÀNG XÂY TỔ -->
+        <div id="game-ongvang-view" class="app-view">
+            <div class="game-header-bar">
+                <span style="font-weight:bold; color:var(--wood-brown);">🐝 MÀN CHƠI: ONG VÀNG XÂY TỔ</span>
+                <span style="font-weight:bold; color:#ef4444;" id="miga1-hp">Mạng chơi: ❤️❤️❤️</span>
+            </div>
+            <div class="game-playground-card" id="miga1-card">
+                <div class="game-prompt-title">Bé hãy dịch từ này sang tiếng Anh:</div>
+                <div class="game-prompt-sub" id="miga1-vi-hint">Nghĩa tiếng Việt</div>
+                <div class="slots-container" id="miga1-slots"></div>
+                <div class="letter-pool" id="miga1-pool"></div>
+                <div id="miga1-status-layer" class="game-over-layer" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- TAB CHÍNH 2: MÀN CHƠI KHU VƯỜN BÍ MẬT (LẬT BÀI) -->
+        <div id="game-latbai-view" class="app-view">
+            <div class="game-header-bar">
+                <span style="font-weight:bold; color:var(--wood-brown);">🃏 MÀN CHƠI: KHU VƯỜN BÍ MẬT</span>
+                <span style="font-weight:bold; color:#ef4444;" id="miga2-hp">Mạng chơi: ❤️❤️❤️</span>
+            </div>
+            <div class="game-playground-card" id="miga2-card">
+                <div class="game-prompt-title" style="font-size:1.3rem;">Tìm các cặp thẻ tương ứng giữa Từ Anh và Nghĩa Việt</div>
+                <div class="card-grid" id="miga2-grid"></div>
+                <div id="miga2-status-layer" class="game-over-layer" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- TAB CHÍNH 3: MÀN CHƠI BẮC CẦU QUA SÔNG -->
+        <div id="game-baccau-view" class="app-view">
+            <div class="game-header-bar">
+                <span style="font-weight:bold; color:var(--wood-brown);">🐊 MÀN CHƠI: BẮC CẦU QUA SÔNG</span>
+                <span style="font-weight:bold; color:#ef4444;" id="miga3-hp">Mạng chơi: ❤️❤️❤️</span>
+            </div>
+            <div class="game-playground-card" id="miga3-card">
+                <div class="game-prompt-title" style="font-size:1.2rem; margin-bottom:2px;">Hãy xếp thành câu có nghĩa tương ứng:</div>
+                <div class="game-prompt-sub" id="miga3-vi-prompt">Nghĩa tiếng Việt</div>
+                <div class="river-zone" id="miga3-river"></div>
+                <div class="letter-pool" id="miga3-pool"></div>
+                <div id="miga3-status-layer" class="game-over-layer" style="display:none;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // KHO DỮ LIỆU GỐC
+        let gardenDatabase = [
+            { word: "Artificial Intelligence", ipa: "/ˌɑː.tɪ.fɪʃ.əl ɪnˈtel.ɪ.dʒəns/", phrase: "Modern artificial intelligence", phraseVi: "Trí tuệ nhân tạo hiện đại", sentence: "AI helps robots think like humans", sentenceVi: "AI giúp rô-bốt suy nghĩ giống con người" },
+            { word: "Facial Recognition", ipa: "/ˌfeɪ.ʃəl ˌrek.əɡˈnɪʃ.ən/", phrase: "Fast facial recognition", phraseVi: "Nhận diện khuôn mặt nhanh", sentence: "This phone uses facial recognition", sentenceVi: "Điện thoại này dùng nhận diện khuôn mặt" },
+            { word: "Chatbot", ipa: "/ˈtʃæt.bɒt/", phrase: "An intelligent chatbot", phraseVi: "Một chú chatbot thông minh", sentence: "The chatbot answered my question", sentenceVi: "Chatbot đã trả lời câu hỏi của tớ" },
+            { word: "Virtual Reality", ipa: "/ˌvɜː.tʃu.əl riˈæl.ə.ti/", phrase: "Virtual reality game", phraseVi: "Trò chơi thực tế ảo", sentence: "I play virtual reality games", sentenceVi: "Tớ chơi trò chơi thực tế ảo" }
+        ];
+
+        let currentWordIdx = 0, currentStep = 0, scoreFlowers = 0, playerHp = 3;
+        let stepCompletedStatus = [false, false, false];
+
+        // Biến cục bộ quản lý Mạng cho từng Mini Game
+        let miga1_hp = 3, miga2_hp = 3, miga3_hp = 3;
+
+        // DOM ELEMENTS
+        const sidebar = document.getElementById('sidebar'), toggleBtn = document.getElementById('toggleBtn'), resetBtn = document.getElementById('resetBtn'), listContainer = document.getElementById('listContainer'), micBtn = document.getElementById('micBtn'), gameMsg = document.getElementById('gameMsg'), flowerCount = document.getElementById('flowerCount'), hpBox = document.getElementById('hpBox'), girl = document.getElementById('girl'), sunFlower = document.getElementById('sunFlower'), scorePercentBox = document.getElementById('scorePercentBox'), levelSelect = document.getElementById('levelSelect'), vocabContentBox = document.getElementById('vocabContentBox'), accordionToggleBtn = document.getElementById('accordionToggleBtn');
+
+        // SỰ KIỆN SIDEBAR ĐIỀU HƯỚNG TỔNG
+        toggleBtn.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+        accordionToggleBtn.addEventListener('click', () => {
+            vocabContentBox.classList.toggle('show');
+        });
+
+        // HÀM CHUYỂN ĐỔI TAB CHÍNH KHÔNG DÙNG TAB PHỤ HOẶC POPUP
+        function switchTab(viewId) {
+            document.querySelectorAll('.app-view').forEach(view => view.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            
+            // Mỗi lần nhấn vào tab chơi tương ứng sẽ làm mới hoặc khởi tạo lại màn chơi đó
+            if (viewId === 'game-ongvang-view') startOngVangGame();
+            if (viewId === 'game-latbai-view') startLatBaiGame();
+            if (viewId === 'game-baccau-view') startBacCauGame();
+        }
+
+        // THÊM TỪ MỚI QUA NHẬP LIỆU CỦA BÉ
+        document.getElementById('btnAddSubmit').addEventListener('click', () => {
+            const w = document.getElementById('inWord').value.trim();
+            const p = document.getElementById('inPhrase').value.trim();
+            const s = document.getElementById('inSentence').value.trim();
+            const svi = document.getElementById('inSentenceVi').value.trim();
+            if(!w || !p || !s || !svi) return alert("Bé điền đủ thông tin nha!");
+            gardenDatabase.push({ word: w, ipa: "/ˌkoʊd.tự.thêm/", phrase: p, phraseVi: "Cụm từ mới nạp", sentence: s, sentenceVi: svi });
+            loadGardenRound(); alert("✨ Đã thêm từ thành công vào mảnh vườn!");
+        });
+
+        // THUẬT TOÁN LEVENSHTEIN TÍNH PHẦN TRĂM CHUẨN XÁC NÓI
+        function calculateSimilarity(s1, s2) {
+            let longer = s1.length > s2.length ? s1 : s2;
+            let shorter = s1.length > s2.length ? s2 : s1;
+            if (longer.length === 0) return 100;
+            let costs = [];
+            for (let i = 0; i <= longer.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= shorter.length; j++) {
+                    if (i == 0) costs[j] = j;
+                    else if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (longer.charAt(i - 1) != shorter.charAt(j - 1))
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        costs[j - 1] = lastValue; lastValue = newValue;
+                    }
+                }
+                if (i > 0) costs[shorter.length] = lastValue;
+            }
+            return Math.round((longer.length - costs[shorter.length]) / longer.length * 100);
+        }
+
+        function renderSidebarMenu() {
+            listContainer.innerHTML = '';
+            gardenDatabase.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `word-item ${index === currentWordIdx ? 'active' : ''}`;
+                itemDiv.innerHTML = `<span>${index + 1}. ${item.word}</span>`;
+                itemDiv.addEventListener('click', () => { currentWordIdx = index; loadGardenRound(); });
+                listContainer.appendChild(itemDiv);
+            });
+        }
+
+        function loadGardenRound() {
+            const currentData = gardenDatabase[currentWordIdx];
+            document.getElementById('lblWord').innerText = currentData.word;
+            document.getElementById('lblIpa').innerText = currentData.ipa;
+            document.getElementById('lblPhrase').innerText = currentData.phrase;
+            document.getElementById('lblPhraseVi').innerText = currentData.phraseVi;
+            document.getElementById('lblSentence').innerText = currentData.sentence;
+            document.getElementById('lblSentenceVi').innerText = currentData.sentenceVi;
+            stepCompletedStatus = [false, false, false]; currentStep = 0;
+            refreshPanelUI(); renderSidebarMenu();
+            document.body.style.background = "linear-gradient(to bottom, var(--garden-sky) 60%, #4ade80 100%)";
+        }
+
+        function refreshPanelUI() {
+            for (let i = 0; i < 3; i++) {
+                const rowElement = document.getElementById(`row${i}`);
+                const tagElement = document.getElementById(`tag${i}`);
+                const titles = ["Từ Vựng 🎯", "Cụm Từ 🌿", "Câu Ví Dụ 🌸"];
+                rowElement.className = "task-row";
+                if (stepCompletedStatus[i]) { rowElement.classList.add('completed'); tagElement.innerText = `Chặng ${i+1}: ${titles[i]} ✅ XONG`; }
+                else if (i === currentStep) { rowElement.classList.add('speaking'); tagElement.innerText = `Chặng ${i+1}: ${titles[i]} 📢 ĐANG ĐỌC`; }
+                else { tagElement.innerText = `Chặng ${i+1}: ${titles[i]} 🔒 ĐỢI LƯỢT`; }
+            }
+        }
+
+        function playNativeVoice(stepIdx) {
+            const data = gardenDatabase[currentWordIdx];
+            let text = stepIdx === 0 ? data.word : (stepIdx === 1 ? data.phrase : data.sentence);
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US'; utterance.rate = 0.85; window.speechSynthesis.speak(utterance);
+        }
+
+        // SỰ KIỆN THU ÂM VÀ CHẤM ĐIỂM GIỌNG NÓI CHO KHU VƯỜN CHÍNH
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition(); recognition.lang = 'en-US';
+            micBtn.addEventListener('click', () => { recognition.start(); micBtn.classList.add('listening'); });
+            
+            recognition.onresult = (event) => {
+                micBtn.classList.remove('listening');
+                let resultText = event.results[0][0].transcript.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                let data = gardenDatabase[currentWordIdx];
+                let target = currentStep === 0 ? data.word : (currentStep === 1 ? data.phrase : data.sentence);
+                let score = calculateSimilarity(resultText, target.toLowerCase());
+
+                scorePercentBox.style.display = "block"; scorePercentBox.innerText = `Kết quả đọc: Chỉnh xác ${score}%`;
+                let pass = levelSelect.value === 'easy' ? 45 : (levelSelect.value === 'hard' ? 85 : 65);
+
+                if (score >= pass) {
+                    stepCompletedStatus[currentStep] = true;
+                    if (stepCompletedStatus[0] && stepCompletedStatus[1] && stepCompletedStatus[2]) {
+                        scoreFlowers++; flowerCount.innerText = scoreFlowers; alert("🌻 Đạt chuẩn! Bé nhận được thêm 1 bông hoa hướng dương!");
+                        currentWordIdx = (currentWordIdx + 1) % gardenDatabase.length; loadGardenRound();
+                    } else { currentStep = stepCompletedStatus.indexOf(false); refreshPanelUI(); }
+                } else {
+                    playerHp--; hpBox.innerText = "❤️".repeat(playerHp) + "🖤".repeat(3-playerHp);
+                    if(playerHp<=0) { alert("🥀 Hết mạng vườn chính! Luyện tập lại nhé!"); playerHp=3; hpBox.innerText="❤️❤️❤️"; }
+                }
+            };
+        }
+
+        // ==========================================
+        // MÀN CHƠI 1: ONG VÀNG XÂY TỔ (HIỆN TIẾNG VIỆT TRƯỚC)
+        // ==========================================
+        function startOngVangGame() {
+            miga1_hp = 3; document.getElementById('miga1-hp').innerText = `Mạng chơi: ❤️❤️❤️`;
+            document.getElementById('miga1-status-layer').style.display = "none";
+            
+            let data = gardenDatabase[currentWordIdx];
+            // Hiển thị nghĩa tiếng Việt trước làm mục tiêu định hướng dịch
+            document.getElementById('miga1-vi-hint').innerText = `"${data.phraseVi}"`;
+
+            let targetWord = data.word.toUpperCase().replace(/\s+/g, '');
+            let letters = targetWord.split('');
+            let shuffled = [...letters].sort(() => Math.random() - 0.5);
+            let playerInput = [];
+
+            const slotsBox = document.getElementById('miga1-slots'); slotsBox.innerHTML = '';
+            letters.forEach(() => { const slot = document.createElement('div'); slot.className = "slot-box"; slotsBox.appendChild(slot); });
+
+            const poolBox = document.getElementById('miga1-pool'); poolBox.innerHTML = '';
+            shuffled.forEach(char => {
+                const block = document.createElement('div'); block.className = "letter-block"; block.innerText = char;
+                block.onclick = () => {
+                    block.classList.add('selected'); playerInput.push(char);
+                    slotsBox.children[playerInput.length - 1].innerText = char;
+
+                    if (playerInput.length === letters.length) {
+                        if (playerInput.join('') === targetWord) {
+                            scoreFlowers += 2; flowerCount.innerText = scoreFlowers;
+                            showMigaEndLayout('miga1-status-layer', '🎉 BÉ THẮNG RỒI!', 'Đã xây tổ xong và nhận +2 Hướng Dương!', startOngVangGame);
+                        } else {
+                            miga1_hp--; document.getElementById('miga1-hp').innerText = `Mạng chơi: ` + "❤️".repeat(miga1_hp) + "🖤".repeat(3-miga1_hp);
+                            document.getElementById('miga1-card').classList.add('shake'); setTimeout(() => document.getElementById('miga1-card').classList.remove('shake'), 400);
+                            if (miga1_hp <= 0) {
+                                showMigaEndLayout('miga1-status-layer', '😭 BÉ THUA MẤT RỒI', 'Hãy cố gắng hơn ở lượt chơi sau nha!', startOngVangGame);
+                            } else {
+                                setTimeout(startOngVangGame, 1000); // Thử lại mảnh ghép khác
+                            }
+                        }
+                    }
+                };
+                poolBox.appendChild(block);
+            });
+        }
+
+        // ==========================================
+        // MÀN CHƠI 2: KHU VƯỜN BÍ MẬT (LẬT THẺ)
+        // ==========================================
+        function startLatBaiGame() {
+            miga2_hp = 3; document.getElementById('miga2-hp').innerText = `Mạng chơi: ❤️❤️❤️`;
+            document.getElementById('miga2-status-layer').style.display = "none";
+
+            let poolSize = levelSelect.value === 'easy' ? 2 : 3;
+            let currentPool = gardenDatabase.slice(0, poolSize);
+            let cardsData = [];
+            currentPool.forEach((item, idx) => {
+                cardsData.push({ text: item.word, type: 'en', id: idx });
+                cardsData.push({ text: item.phraseVi, type: 'vi', id: idx });
+            });
+            cardsData.sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('miga2-grid'); grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${cardsData.length > 4 ? 4 : 2}, 120px)`;
+
+            let firstCard = null, isLock = false;
+
+            cardsData.forEach(cd => {
+                const card = document.createElement('div'); card.className = "game-card";
+                card.innerHTML = `<div class="card-inner"><div class="card-back">🍃</div><div class="card-front ${cd.type}">${cd.text}</div></div>`;
+                
+                card.onclick = () => {
+                    if (isLock || card.classList.contains('flipped')) return;
+                    card.classList.add('flipped');
+
+                    if (!firstCard) { firstCard = { node: card, data: cd }; return; }
+                    isLock = true;
+
+                    if (firstCard.data.id === cd.id && firstCard.data.type !== cd.type) {
+                        setTimeout(() => {
+                            firstCard.node.classList.add('matched'); card.classList.add('matched');
+                            firstCard = null; isLock = false;
+                            if (document.querySelectorAll('.game-card:not(.matched)').length === 0) {
+                                scoreFlowers += 3; flowerCount.innerText = scoreFlowers;
+                                showMigaEndLayout('miga2-status-layer', '🎉 HOÀN THÀNH KHU VƯỜN!', 'Tìm hết các cặp đôi bí mật, nhận +3 Hướng Dương!', startLatBaiGame);
+                            }
+                        }, 500);
+                    } else {
+                        miga2_hp--; document.getElementById('miga2-hp').innerText = `Mạng chơi: ` + "❤️".repeat(miga2_hp) + "🖤".repeat(3-miga2_hp);
+                        setTimeout(() => {
+                            firstCard.node.classList.remove('flipped'); card.classList.remove('flipped');
+                            firstCard = null; isLock = false;
+                            if (miga2_hp <= 0) {
+                                showMigaEndLayout('miga2-status-layer', '😭 HẾT MẠNG RỒI', 'Lật sai quá nhiều lần, hãy thử lại nhé!', startLatBaiGame);
+                            }
+                        }, 1000);
+                    }
+                };
+                grid.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // MÀN CHƠI 3: BẮC CẦU QUA SÔNG
+        // ==========================================
+        function startBacCauGame() {
+            miga3_hp = 3; document.getElementById('miga3-hp').innerText = `Mạng chơi: ❤️❤️❤️`;
+            document.getElementById('miga3-status-layer').style.display = "none";
+
+            let data = gardenDatabase[currentWordIdx];
+            document.getElementById('miga3-vi-prompt').innerText = `"${data.sentenceVi}"`;
+
+            let correctArr = data.sentence.split(' ');
+            let shuffleArr = [...correctArr].sort(() => Math.random() - 0.5);
+            let answerBuild = [];
+
+            const river = document.getElementById('miga3-river'); river.innerHTML = '';
+            correctArr.forEach(() => { const slot = document.createElement('div'); slot.className = "slot-box"; slot.style.width = "auto"; slot.style.padding = "0 8px"; river.appendChild(slot); });
+
+            const pool = document.getElementById('miga3-pool'); pool.innerHTML = '';
+            shuffleArr.forEach(word => {
+                const brick = document.createElement('div'); brick.className = "word-brick"; brick.innerText = word;
+                brick.onclick = () => {
+                    brick.style.opacity = "0.2"; brick.style.pointerEvents = "none";
+                    answerBuild.push(word);
+                    river.children[answerBuild.length - 1].innerText = word;
+
+                    if (answerBuild.length === correctArr.length) {
+                        if (answerBuild.join(' ') === data.sentence) {
+                            scoreFlowers += 4; flowerCount.innerText = scoreFlowers;
+                            showMigaEndLayout('miga3-status-layer', '🎉 CẦU ĐÃ BẮC XONG!', 'Giúp bé qua sông an toàn, nhận +4 Hướng Dương!', startBacCauGame);
+                        } else {
+                            miga3_hp--; document.getElementById('miga3-hp').innerText = `Mạng chơi: ` + "❤️".repeat(miga3_hp) + "🖤".repeat(3-miga3_hp);
+                            document.getElementById('miga3-card').classList.add('shake'); setTimeout(() => document.getElementById('miga3-card').classList.remove('shake'), 400);
+                            if (miga3_hp <= 0) {
+                                showMigaEndLayout('miga3-status-layer', '🐊 CẦU BỊ SẬP MẤT RỒI', 'Cá sấu đã phá chân cầu, xây lại thôi nào!', startBacCauGame);
+                            } else {
+                                setTimeout(startBacCauGame, 1200);
+                            }
+                        }
+                    }
+                };
+                pool.appendChild(brick);
+            });
+        }
+
+        // HÀM RENDER LAYOUT KẾT THÚC CHO MỖI MÀN CHƠI MINI GAME CHÍNH
+        function showMigaEndLayout(layerId, title, subText, restartFunc) {
+            const layer = document.getElementById(layerId); layer.innerHTML = ''; layer.style.display = "flex";
+            const h3 = document.createElement('h3'); h3.innerText = title; h3.style.fontSize = "2rem"; h3.style.margin = "0";
+            h3.style.color = title.includes("THẮNG") ? "#10b981" : "#ef4444";
+            const p = document.createElement('p'); p.innerText = subText; p.style.fontSize = "1.1rem";
+            const btn = document.createElement('button'); btn.className = "btn-restart-miga"; btn.innerText = "Chơi Lượt Mới 🔄";
+            btn.onclick = () => { layer.style.display = "none"; restartFunc(); };
+            layer.appendChild(h3); layer.appendChild(p); layer.appendChild(btn);
+        }
+
+        resetBtn.addEventListener('click', () => { scoreFlowers = 0; playerHp = 3; currentWordIdx = 0; flowerCount.innerText = "0"; hpBox.innerText = "❤️❤️❤️"; loadGardenRound(); });
+
+        // KHỞI ĐỘNG CHẠY HỆ THỐNG
+        loadGardenRound();
+    </script>
+</body>
+</html>
